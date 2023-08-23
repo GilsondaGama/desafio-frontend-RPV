@@ -11,79 +11,83 @@ import { api } from '../service/axios'
 
 import InputMask from 'react-input-mask'
 import { parseISO, subYears, isBefore } from 'date-fns'
-import { priceFormatter } from '../utils/priceFormatter'
+import { priceFormatter } from '../utils/formatter'
 import {
   Description,
   ToggleContainer,
   ToggleWrapper,
 } from './components/toggleButton/styles'
 
-const schemaFormRVP = z.object({
-  fullname: z
-    .string()
-    .nonempty('Nome é obrigatório')
-    .max(100, 'Máximo 100 caracteres'),
-  documentNumber: z
-    .string()
-    .nonempty('O CPF é obrigatório')
-    .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
-    .refine((value) => value.length === 11, {
-      message: 'CPF deve conter 11 dígitos numéricos',
-    }),
-  birthdate: z.string().refine(
-    (value) => {
-      const birthdayDate = parseISO(value)
-      const today = new Date()
-      const legalAgeDate = subYears(today, 18)
+const schemaFormRVP = z
+  .object({
+    fullname: z
+      .string()
+      .nonempty('Nome é obrigatório')
+      .max(100, 'Máximo 100 caracteres'),
+    documentNumber: z
+      .string()
+      .nonempty('O CPF é obrigatório')
+      .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
+      .refine((value) => value.length === 11, {
+        message: 'CPF deve conter 11 dígitos numéricos',
+      }),
+    birthdate: z.string().refine(
+      (value) => {
+        const birthdayDate = parseISO(value)
+        const today = new Date()
+        const legalAgeDate = subYears(today, 18)
 
-      return isBefore(birthdayDate, legalAgeDate)
-    },
-    {
-      message: 'Você deve ser maior de idade para continuar.',
-    },
-  ),
-  phoneNumber: z
-    .string()
-    .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
-    .refine((value) => value.length >= 10, {
-      message: 'Número de telefone deve conter pelo menos 10 dígitos numéricos',
-    }),
-  address: z.object({
-    zipcode: z
+        return isBefore(birthdayDate, legalAgeDate)
+      },
+      {
+        message: 'Você deve ser maior de idade para continuar.',
+      },
+    ),
+    phoneNumber: z
       .string()
       .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
-      .refine((value) => value.length === 8, {
-        message: 'CEP deve conter 8 dígitos',
+      .refine((value) => value.length >= 10, {
+        message:
+          'Número de telefone deve conter pelo menos 10 dígitos numéricos',
       }),
-    // country: z.string(),
-    // city: z.string(),
-    // street: z.string(),
-    // addressDistrict: z.string(),
-    // addressNumber: z.string(),
-    // addressComplement: z.string().optional(),
-  }),
+    address: z.object({
+      zipcode: z
+        .string()
+        .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
+        .refine((value) => value.length === 8, {
+          message: 'CEP deve conter 8 dígitos',
+        }),
+      // country: z.string(),
+      // city: z.string(),
+      // street: z.string(),
+      // addressDistrict: z.string(),
+      // addressNumber: z.string(),
+      // addressComplement: z.string().optional(),
+    }),
 
-  email: z.string().email('email inválido'),
-  minimumWage: z.number().positive('Valor inválido'),
+    email: z.string().email('email inválido'),
+    minimumWage: z.string().transform((value) => {
+      return parseFloat(value)
+    }),
 
-  // educationLevel: z.string(),
-  // password: z
-  //   .string()
-  //   .nonempty('A senha é obrigatória')
-  //   .min(10, 'A senha deve ter no mínimo 10 caracteres'),
-  confirmPassword: z
-    .string()
-    .nonempty('A senha é obrigatória')
-    .min(10, 'A senha deve ter no mínimo 10 caracteres'),
-})
-
-// .transform((data) => ({
-//   ...data,
-//   address: {
-//     ...data.address,
-//     zipcode: data.address.zipcode.replace(/\D/g, ''),
-//   },
-// }))
+    // educationLevel: z.string(),
+    password: z
+      .string()
+      .nonempty('A senha é obrigatória')
+      .min(10, 'A senha deve ter no mínimo 10 caracteres'),
+    confirmPassword: z.string(),
+  })
+  .transform((data) => ({
+    ...data,
+    address: {
+      ...data.address,
+      zipcode: data.address.zipcode.replace(/\D/g, ''),
+    },
+  }))
+  .refine(({ password, confirmPassword }) => password === confirmPassword, {
+    message: 'As senhas não coincidem',
+    path: ['confirmPassword'],
+  })
 
 type FormPropsRVP = z.infer<typeof schemaFormRVP>
 
@@ -245,19 +249,21 @@ export function FormRPV() {
 
         <FormInputDiv>
           <label>Renda Mensal</label>
-          <input type="number" {...register('minimumWage')} />
+          <InputMask mask="9,999,999.99" {...register('minimumWage')} />
           <span>{errors.minimumWage ? errors.minimumWage.message : ' '}</span>
         </FormInputDiv>
 
         {/* // educationLevel: string */}
-        {/*
-      <FormInputDiv>
-        <label htmlFor="password">Senha</label>
-        <input type="password" {...register('password')} />
-        <span>{errors.password ? errors.password.message : ' '}</span>
-      </FormInputDiv>
 
-    */}
+        <FormInputDiv>
+          <label>Senha</label>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            {...register('password')}
+          />
+          <span>{errors.password ? errors.password.message : ' '}</span>
+        </FormInputDiv>
+
         <FormInputDiv>
           <label>Confirmar senha</label>
           <input
@@ -268,10 +274,6 @@ export function FormRPV() {
             {errors.confirmPassword ? errors.confirmPassword.message : ' '}
           </span>
         </FormInputDiv>
-
-        {/* <ToggleButton type="button" onClick={handleToggleClick}>
-          {showPassword ? 'Ocultar Senha' : 'Ver senha'}
-        </ToggleButton> */}
 
         <ToggleContainer>
           <ToggleWrapper>

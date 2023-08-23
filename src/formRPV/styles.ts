@@ -58,3 +58,10 @@ export const FormInputDiv = styled.div`
     color: ${(props) => props.theme['gray-400']};
   }
 `
+
+export const ToggleButton = styled.button`
+  background-color: #f0f0f0;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+`

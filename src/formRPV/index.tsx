@@ -1,5 +1,7 @@
 import { FormContainer, FormInputDiv } from './styles'
 
+import { ToggleButton } from './components/toggleButton'
+
 import * as z from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
@@ -9,6 +11,12 @@ import { api } from '../service/axios'
 
 import InputMask from 'react-input-mask'
 import { parseISO, subYears, isBefore } from 'date-fns'
+import { priceFormatter } from '../utils/priceFormatter'
+import {
+  Description,
+  ToggleContainer,
+  ToggleWrapper,
+} from './components/toggleButton/styles'
 
 const schemaFormRVP = z.object({
   fullname: z
@@ -34,8 +42,6 @@ const schemaFormRVP = z.object({
       message: 'Você deve ser maior de idade para continuar.',
     },
   ),
-  //   .string()
-  //   .min(9, 'Você precisa ter mais de 18 anos para continuar...'),
   phoneNumber: z
     .string()
     .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
@@ -57,14 +63,18 @@ const schemaFormRVP = z.object({
     // addressComplement: z.string().optional(),
   }),
 
-  // email: z.string().email('email inválido'),
-  // minimumWage: z.number().positive(),
+  email: z.string().email('email inválido'),
+  minimumWage: z.number().positive('Valor inválido'),
+
   // educationLevel: z.string(),
   // password: z
   //   .string()
   //   .nonempty('A senha é obrigatória')
   //   .min(10, 'A senha deve ter no mínimo 10 caracteres'),
-  // confirmPassword: z.string(),
+  confirmPassword: z
+    .string()
+    .nonempty('A senha é obrigatória')
+    .min(10, 'A senha deve ter no mínimo 10 caracteres'),
 })
 
 // .transform((data) => ({
@@ -86,7 +96,7 @@ type AddressProps = {
 }
 
 export function FormRPV() {
-  const [output, setOutput] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
 
   const {
     reset,
@@ -99,19 +109,16 @@ export function FormRPV() {
     criteriaMode: 'all',
     mode: 'all',
     resolver: zodResolver(schemaFormRVP),
-    // defaultValues: {
-    //   fullname: '',
-    // },
   })
 
   const zipCode = watch('address.zipcode')
 
+  const handleToggleClick = () => {
+    setShowPassword(!showPassword)
+  }
+
   const handleSubmitRVP = (data: FormPropsRVP) => {
-    // window.alert(JSON.stringify(data, null, 2))
-
-    setOutput(JSON.stringify(data, null, 2))
-    console.log(data)
-
+    window.alert(JSON.stringify(data, null, 2))
     reset()
   }
 
@@ -230,23 +237,17 @@ export function FormRPV() {
         */}
         </>
 
-        {/*
-      <FormInputDiv>
-        <label>E-mail</label>
-        <input type="email" {...register('email')} />
-        <span>{errors.email ? errors.email.message : ' '}</span>
-      </FormInputDiv>
-      */}
+        <FormInputDiv>
+          <label>E-mail</label>
+          <input type="email" {...register('email')} />
+          <span>{errors.email ? errors.email.message : ' '}</span>
+        </FormInputDiv>
 
-        {/* <FormInputDiv>
-        <label>Renda Mensal</label>
-        <input
-          type="number"
-          // mask="999.999.999,99"
-          {...register('minimumWage', { valueAsNumber: true })}
-        />
-        <span>{errors.minimumWage ? errors.minimumWage.message : ' '}</span>
-      </FormInputDiv> */}
+        <FormInputDiv>
+          <label>Renda Mensal</label>
+          <input type="number" {...register('minimumWage')} />
+          <span>{errors.minimumWage ? errors.minimumWage.message : ' '}</span>
+        </FormInputDiv>
 
         {/* // educationLevel: string */}
         {/*
@@ -256,18 +257,34 @@ export function FormRPV() {
         <span>{errors.password ? errors.password.message : ' '}</span>
       </FormInputDiv>
 
-      <FormInputDiv>
-        <label htmlFor="confirmPassword">Senha</label>
-        <input type="password" {...register('confirmPassword')} />
-        <span>
-          {errors.confirmPassword ? errors.confirmPassword.message : ' '}
-        </span>
-      </FormInputDiv>
-      */}
+    */}
+        <FormInputDiv>
+          <label>Confirmar senha</label>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            {...register('confirmPassword')}
+          />
+          <span>
+            {errors.confirmPassword ? errors.confirmPassword.message : ' '}
+          </span>
+        </FormInputDiv>
+
+        {/* <ToggleButton type="button" onClick={handleToggleClick}>
+          {showPassword ? 'Ocultar Senha' : 'Ver senha'}
+        </ToggleButton> */}
+
+        <ToggleContainer>
+          <ToggleWrapper>
+            <ToggleButton
+              isChecked={showPassword}
+              onToggleClick={handleToggleClick}
+            />
+            <Description>Ver senhas</Description>
+          </ToggleWrapper>
+        </ToggleContainer>
 
         <button type="submit">Cadastrar</button>
       </FormContainer>
-      <pre>{output}</pre>
     </>
   )
 }

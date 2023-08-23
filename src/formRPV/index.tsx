@@ -11,12 +11,15 @@ import { api } from '../service/axios'
 
 import InputMask from 'react-input-mask'
 import { parseISO, subYears, isBefore } from 'date-fns'
-import { priceFormatter } from '../utils/formatter'
+
+// import { priceFormatter } from '../utils/formatter'
+
 import {
   Description,
   ToggleContainer,
   ToggleWrapper,
 } from './components/toggleButton/styles'
+import { EducationRadioButton } from './components/radioButton'
 
 const schemaFormRVP = z
   .object({
@@ -53,24 +56,23 @@ const schemaFormRVP = z
     address: z.object({
       zipcode: z
         .string()
-        .transform((value) => value.replace(/\D/g, '')) // Remove caracteres não numéricos
+        .transform((value) => value.replace(/[^0-9]/g, ''))
         .refine((value) => value.length === 8, {
-          message: 'CEP deve conter 8 dígitos',
+          message: 'CEP deve conter 8 dígitos numéricos',
         }),
-      // country: z.string(),
-      // city: z.string(),
-      // street: z.string(),
-      // addressDistrict: z.string(),
-      // addressNumber: z.string(),
-      // addressComplement: z.string().optional(),
-    }),
 
+      country: z.string(),
+      city: z.string(),
+      street: z.string(),
+      addressDistrict: z.string(),
+      addressNumber: z.string(),
+      addressComplement: z.string().optional(),
+    }),
     email: z.string().email('email inválido'),
     minimumWage: z.string().transform((value) => {
       return parseFloat(value)
     }),
-
-    // educationLevel: z.string(),
+    educationLevel: z.string(),
     password: z
       .string()
       .nonempty('A senha é obrigatória')
@@ -81,7 +83,7 @@ const schemaFormRVP = z
     ...data,
     address: {
       ...data.address,
-      zipcode: data.address.zipcode.replace(/\D/g, ''),
+      zipcode: data.address.zipcode.replace(/[^0-9]/g, ''),
     },
   }))
   .refine(({ password, confirmPassword }) => password === confirmPassword, {
@@ -116,6 +118,7 @@ export function FormRPV() {
   })
 
   const zipCode = watch('address.zipcode')
+  const selectedOption = watch('educationLevel')
 
   const handleToggleClick = () => {
     setShowPassword(!showPassword)
@@ -123,6 +126,7 @@ export function FormRPV() {
 
   const handleSubmitRVP = (data: FormPropsRVP) => {
     window.alert(JSON.stringify(data, null, 2))
+
     reset()
   }
 
@@ -185,60 +189,58 @@ export function FormRPV() {
         <>
           <FormInputDiv>
             <label>CEP</label>
-            <InputMask mask="999-99999" {...register('address.zipcode')} />
+            <input {...register('address.zipcode')} />
             <span>
               {errors.address?.zipcode ? errors.address?.zipcode.message : ' '}
             </span>
           </FormInputDiv>
-          {/* 
 
-        <FormInputDiv>
-          <label>Estado</label>
-          <input type="text" disabled {...register('address.country')} />
-          <span> </span>
-        </FormInputDiv>
+          <FormInputDiv>
+            <label>Estado</label>
+            <input type="text" disabled {...register('address.country')} />
+            <span> </span>
+          </FormInputDiv>
 
-        <FormInputDiv>
-          <label>Cidade</label>
-          <input type="text" disabled {...register('address.city')} />
-          <span> </span>
-        </FormInputDiv>
+          <FormInputDiv>
+            <label>Cidade</label>
+            <input type="text" disabled {...register('address.city')} />
+            <span> </span>
+          </FormInputDiv>
 
-        <FormInputDiv>
-          <label>Endereço</label>
-          <input type="text" disabled {...register('address.street')} />
-          <span> </span>
-        </FormInputDiv>
+          <FormInputDiv>
+            <label>Endereço</label>
+            <input type="text" disabled {...register('address.street')} />
+            <span> </span>
+          </FormInputDiv>
 
-        <FormInputDiv>
-          <label>Bairro</label>
-          <input
-            type="text"
-            disabled
-            {...register('address.addressDistrict')}
-          />
-          <span> </span>
-        </FormInputDiv>
+          <FormInputDiv>
+            <label>Bairro</label>
+            <input
+              type="text"
+              disabled
+              {...register('address.addressDistrict')}
+            />
+            <span> </span>
+          </FormInputDiv>
 
-        <FormInputDiv>
-          <label>Número</label>
-          <input type="text" {...register('address.addressNumber')} />
-          <span>
-            {errors.address?.addressNumber
-              ? errors.address?.addressNumber.message
-              : ' '}
-          </span>
-        </FormInputDiv>
+          <FormInputDiv>
+            <label>Número</label>
+            <input type="text" {...register('address.addressNumber')} />
+            <span>
+              {errors.address?.addressNumber
+                ? errors.address?.addressNumber.message
+                : ' '}
+            </span>
+          </FormInputDiv>
 
-        <FormInputDiv>
-          <label>Complemento</label>
-          <input
-            type="text"
-            disabled
-            {...register('address.addressComplement')}
-          />
-        </FormInputDiv> 
-        */}
+          <FormInputDiv>
+            <label>Complemento</label>
+            <input
+              type="text"
+              disabled
+              {...register('address.addressComplement')}
+            />
+          </FormInputDiv>
         </>
 
         <FormInputDiv>
@@ -253,7 +255,13 @@ export function FormRPV() {
           <span>{errors.minimumWage ? errors.minimumWage.message : ' '}</span>
         </FormInputDiv>
 
-        {/* // educationLevel: string */}
+        <div>
+          <h5>Escolaridade</h5>
+          <EducationRadioButton
+            selectedOption={selectedOption}
+            onOptionChange={(value) => setValue('educationLevel', value)}
+          />
+        </div>
 
         <FormInputDiv>
           <label>Senha</label>
